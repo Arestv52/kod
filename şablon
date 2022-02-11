@@ -1,0 +1,1517 @@
+<?php
+/**
+ * The template for comments section
+ */
+
+?>
+
+<?php
+
+	if (!empty($_SERVER['SCRIPT_FILENAME']) && 'comments.php' == basename($_SERVER['SCRIPT_FILENAME']))
+		die ('Please do not load this page directly. Thanks!');
+
+	if ( post_password_required() ) { ?>
+		This post is password protected. Enter the password to view comments.
+	<?php
+		return;
+	}
+?>
+
+<?php if ( have_comments() ) : ?>
+	
+  <div class="comments-area"> 
+	<h2><?php comments_number('No Comments', 'One Comment', '% Comments' );?></h2>
+
+	<div class="navigation">
+		<div class="next-posts"><?php previous_comments_link() ?></div>
+		<div class="prev-posts"><?php next_comments_link() ?></div>
+	</div>
+   
+	<ol class="commentlist">
+		<?php wp_list_comments(); ?>
+	</ol>
+
+	<div class="navigation">
+		<div class="next-posts"><?php previous_comments_link() ?></div>
+		<div class="prev-posts"><?php next_comments_link() ?></div>
+	</div>
+
+</div>
+	
+ <?php else : // this is displayed if there are no comments so far ?>
+
+	<?php if ( comments_open() ) : ?>
+		<!-- If comments are open, but there are no comments. -->
+
+	 <?php else : // comments are closed ?>
+	<?php endif; ?>
+	
+<?php endif; ?>
+
+
+<?php if ( comments_open() ) : ?>
+
+
+
+<div id="comment-form">
+
+	<h2><?php comment_form_title( 'What do you think?', 'Leave a Comment to %s' ); ?></h2>
+
+	<div class="cancel-comment-reply">
+		<?php cancel_comment_reply_link(); ?>
+	</div>
+
+	<?php if ( get_option('comment_registration') && !is_user_logged_in() ) : ?>
+		<p>You must be <a href="<?php echo wp_login_url( get_permalink() ); ?>">logged in</a> to post a comment.</p>
+	<?php else : ?>
+
+		<?php comment_form(); ?>
+ 
+ </div>
+
+	<?php endif; // If registration required and not logged in ?>
+	
+
+<?php endif; ?>
+
+/**
+ * @package pinbin
+ */
+
+@import url( 'style.css' );
+
+/* Add overwrites as needed so that the content of the editor field is attractive and not broken */
+body { 
+	padding: 0px 10px;
+	width: 630px;
+} 
+
+<?php
+/**
+ * The template for displaying the footer.
+ */
+
+?>
+
+<?php if ( is_active_sidebar( 'pinbin_footer')) { ?>     
+   <div id="footer-area">
+			<?php dynamic_sidebar( 'pinbin_footer' ); ?>
+        </div><!-- // footer area with widgets -->   
+<?php }  ?>           
+<footer class="site-footer">
+	 <div id="copyright">
+	 	<?php _e( 'Pinbin Theme by', 'pinbin' ); ?> <a href="<?php echo esc_url( 'http://colorawesomeness.com/themes/' ); ?>" title="Color Awesomeness" target="_blank"><?php _e( 'Color Awesomeness', 'pinbin' ); ?></a> | 
+		<?php _e( 'Copyright', 'pinbin' ) ?> <?php echo date('Y'); ?> <?php bloginfo( 'name' ); ?> |
+		<?php _e( 'Powered by' , 'pinbin' ); ?> <a href="http://www.wordpress.org" target="_blank" title="<?php _e( 'Powered by WordPress' , 'pinbin' ); ?>">WordPress</a>
+	 </div><!-- // copyright -->   
+</footer>     
+</div><!-- // close wrap div -->   
+
+<?php wp_footer(); ?>
+	
+</body>
+</html>
+
+
+<?php
+/**
+ * Pinbin functions
+ */
+
+/**
+ * Set the content width based on the theme's design and stylesheet.
+ *
+ */	
+    
+if ( ! isset( $content_width ) )
+	$content_width = 630; /* pixels */
+
+/**
+* Custom Theme Options
+*/
+
+if ( is_admin() && is_readable( get_template_directory() . '/options/theme-options.php' ) )
+	require_once( get_template_directory() . '/options/theme-options.php' );
+
+if ( ! function_exists( 'pinbin_setup' ) ):
+	
+/**
+ * Sets up theme defaults and registers support for various WordPress features.
+ */
+
+function pinbin_setup() {
+	
+	/**
+	 * Add default posts and comments RSS feed links to head
+	 */
+	add_theme_support( 'automatic-feed-links' );
+
+		// post thumbnails
+	add_theme_support( 'post-thumbnails' );
+		add_image_size('summary-image', 300, 9999);
+		add_image_size('detail-image', 750, 9999);
+
+	/**
+	 * Make theme available for translation
+	 * Translations can be filed in the /languages/ directory
+	 * If you're building a theme based on Buttercream, use a find and replace
+	 * to change 'buttercream' to the name of your theme in all the template files
+	 */
+	load_theme_textdomain( 'pinbin', get_template_directory() . '/languages' );
+
+	$locale = get_locale();
+	$locale_file = get_template_directory() . "/languages/$locale.php";
+	if ( is_readable( $locale_file ) )
+		require_once( $locale_file );
+
+	/**
+	 * This theme uses wp_nav_menu() in one location.
+	 */
+	register_nav_menus( array(
+		'main_nav' => __( 'Main Menu', 'pinbin' ),
+	) );
+
+	/**
+	* Add support for editor style
+	*/
+	add_editor_style();
+
+	/**
+	 * Add support for custom backgrounds
+	 */
+	$args = array(
+		'default-color' => '#ececec',
+		'default-image' => get_template_directory_uri() . '/images/wood.png',
+	);
+
+	$args = apply_filters( 'pinbin_custom_background_args', $args );
+
+	if ( function_exists( 'wp_get_theme' ) ) {
+		add_theme_support( 'custom-background', $args );
+	}
+	else {
+		define( 'BACKGROUND_COLOR', $args['default-color'] );
+		define( 'BACKGROUND_IMAGE', $args['default-image'] );
+		add_theme_support( 'custom-background', $args );
+	}
+}	
+endif;
+add_action( 'after_setup_theme', 'pinbin_setup' );
+
+function pinbin_widgets_init() {
+     //setup footer widget area
+	register_sidebar(array(
+    		'name' => 'Footer',
+    		'id'   => 'pinbin_footer',
+    		'description'   => 'Footer Widget Area',
+    		'before_widget' => '<div id="%1$s" class="widget %2$s"><div class="widget-copy">',
+    		'after_widget'  => '</div></div>',
+    		'before_title'  => '<h3>',
+    		'after_title'   => '</h3>'
+    	)
+	);
+}
+add_action( 'widgets_init', 'pinbin_widgets_init' );
+
+if (!is_admin())
+	add_action( 'wp_enqueue_scripts', 'pinbin_scripts' ); 
+
+function pinbin_scripts() { 
+	global $post;
+
+	$pinbin_options = get_option('pinbin_theme_options');
+
+	wp_enqueue_style( 'style', get_stylesheet_uri() );
+
+	wp_enqueue_script( 'jquery' );
+
+	wp_enqueue_script( 'pinbin.functions', get_template_directory_uri() . '/js/functions.js', array( 'jquery-masonry' ), '20130605', true );
+
+	wp_enqueue_script( 'jquery-masonry' );
+
+	wp_enqueue_script( 'mobile-nav', get_template_directory_uri() . '/js/mobile-nav.min.js', array( 'jquery' ), '20130605', true );
+
+	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
+		wp_enqueue_script( 'comment-reply' );
+	}
+
+}
+
+/**
+ * wp_title() Filter for better SEO.
+ *
+ * Adopted from Twenty Twelve
+ * @see http://codex.wordpress.org/Plugin_API/Filter_Reference/wp_title
+ *
+ */
+if ( !function_exists('pinbin_wp_title') && !defined( 'AIOSEOP_VERSION' ) ) :
+
+	function pinbin_wp_title( $title, $sep ) {
+		global $page, $paged;
+
+		if ( is_feed() )
+			return $title;
+
+		// Add the site name.
+		$title .= get_bloginfo( 'name' );
+
+		// Add the site description for the home/front page.
+		$site_description = get_bloginfo( 'description', 'display' );
+		if ( $site_description && ( is_home() || is_front_page() ) )
+			$title .= " $sep $site_description";
+
+		// Add a page number if necessary.
+		if ( $paged >= 2 || $page >= 2 )
+			$title .= " $sep " . sprintf( __( 'Page %s', 'pinbin' ), max( $paged, $page ) );
+
+		return $title;
+	}
+	add_filter( 'wp_title', 'pinbin_wp_title', 10, 2 );
+
+endif;
+<!DOCTYPE html>
+<html <?php language_attributes();?>>
+<head>  
+  	<meta charset="<?php bloginfo('charset'); ?>" />
+    <link rel="pingback" href="<?php bloginfo('pingback_url'); ?>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title><?php wp_title('&#124;', true, 'right'); ?></title>
+
+<link rel="profile" href="http://gmpg.org/xfn/11" />
+<link rel="pingback" href="<?php bloginfo( 'pingback_url' ); ?>" />
+    
+    <?php wp_head(); ?>
+</head>
+
+  <body <?php body_class(); ?>>
+
+ 	<!-- logo and navigation -->
+
+ <nav id="site-navigation" class="main-nav" role="navigation">
+    <div id="main-nav-wrapper"> 
+                <div id="logo">
+            <a href="<?php echo esc_url( home_url( '/' ) ); ?>"  title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home">
+              
+                    <?php $pinbin_options = get_option('theme_pinbin_options'); ?>
+
+                <?php if ( $pinbin_options['logo'] != '' ): ?>
+                  <div id="logo">
+                    <img src="<?php echo $pinbin_options['logo']; ?>" />
+                  </div>
+                <?php  endif; ?>
+              </a>
+              
+         </div>  
+          <?php if ( has_nav_menu( 'main_nav' ) ) { ?>
+          <?php wp_nav_menu( array( 'theme_location' => 'main_nav' ) ); ?>
+          <?php } else { ?>
+          <ul><?php wp_list_pages("depth=3&title_li=");  ?></ul>
+          <?php } ?> 
+
+    </div>
+  </nav>  
+<div class="clear"></div>
+<div id="wrap">
+  <div id="header"></div>
+<?php
+/**
+ * Theme index file
+ */
+
+?>
+
+<?php get_header(); ?>
+
+<?php if (have_posts()) : ?>
+<div id="post-area">
+
+<?php while (have_posts()) : the_post(); ?>	
+
+   		<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+		 <?php if ( has_post_thumbnail() ) { ?>
+         <div class="pinbin-image"><a href="<?php the_permalink() ?>"><?php the_post_thumbnail( 'summary-image' );  ?></a></div>
+          <div class="pinbin-category"><p><?php the_category(', ') ?></p></div>
+       
+		  <?php } ?>
+       			<div class="pinbin-copy"><h2><a class="front-link" href="<?php the_permalink() ?>"><?php the_title(); ?></a></h2>
+                <p class="pinbin-date"><?php the_time(get_option('date_format')); ?>  </p>
+
+                  <?php the_excerpt(); ?> 
+
+               <p class="pinbin-link"><a href="<?php the_permalink() ?>">&rarr;</a></p>
+         </div>
+       </div>
+       
+<?php endwhile; ?>
+</div>
+<?php else : ?>
+
+<article id="post-0" class="post no-results not-found">
+        <header class="entry-header">
+          <h1 class="entry-title"><?php _e( 'Nothing Found', 'pinbin' ); ?></h1>
+        </header><!-- .entry-header -->
+
+        <div class="entry-content">
+          <p><?php _e( 'Sorry, but nothing matched your search terms. Please try again with some different keywords.', 'pinbin' ); ?></p>
+          <?php get_search_form(); ?>
+        </div><!-- .entry-content -->
+</article><!-- #post-0 -->
+
+<?php endif; ?>
+    <nav id="nav-below" class="navigation" role="navigation">
+        <div class="view-previous"><?php next_posts_link( __( '&#171; Previous', 'pinbin' ) ) ?></div>
+        <div class="view-next"><?php previous_posts_link( __( 'Next &#187', 'pinbin' ) ) ?> </div>
+    </nav> 
+<?php get_footer(); ?>
+
+<?php
+/**
+ * Single page template
+ */
+
+?>
+
+<?php get_header(); ?>
+
+	<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+       
+   		<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+        
+        <?php if ( has_post_thumbnail() ) { ?>			
+				<div class="pinbin-image"><?php the_post_thumbnail( 'detail-image' );  ?></div>
+        <?php } ?>    
+             
+       			<div class="pinbin-copy">
+                <h1><?php the_title(); ?></h1>
+           		   <?php the_content(); ?> 
+                
+                  <?php wp_link_pages(); ?>
+                
+					       <?php comments_template(); ?>
+                 
+         		</div>          
+                
+       </div>
+       
+		<?php endwhile; endif; ?>      
+
+<?php get_footer(); ?>
+
+Pinbin WordPress theme is a fully responsive theme that looks great on any devices including iPad, iPhone or any other mobile device. This theme is inspired by Pinterest grid system that puts images first. Pinbin is a perfect fit for photographers, web designers and anyone who likes to show off their photos, mockups, infographics and any other images.  Some other great features are sticky (fixed) navigation, responsive layout, simplicity and minimalism. 
+For support, please post in the forums at http://wordpress.org or http://colorawesomeness.com/themes/pinbin/
+
+
+== Installation ==
+Manual installation:
+
+1. Upload the `pinbin` folder to the `/wp-content/themes/` directory
+
+Activiation and Use
+
+1. Activate the Theme through the 'Themes' menu in WordPress
+2. See Appearance -> Pinbin Options to change theme specific options
+
+== Custom Logo ==
+This theme supports custom logo for the header part. 
+You can change or remove it from Appearance -> Pinbin Options.
+
+== Default image ==
+Default image from theme screenshot you can find at /pinbin/images/
+
+== License ==
+Unless otherwise specified, all the theme files, scripts and images
+are licensed under GNU General Public License version 2, see http://www.gnu.org/licenses/gpl-2.0.html.
+The exceptions to this license are as follows:
+- The script jQuery Masonry plugin (jquery.masonry.min.js) is licensed under MIT
+- Default image (/pinbin/images/default.jpg) is the theme's designer personal creations and distributed under the terms of the Creative Commons CC0 1.0 Universal Public Domain Dedication (http://creativecommons.org/publicdomain/zero/1.0/deed.en)
+
+== Theme Notes ==
+About the theme in the following link.
+http://colorawesomeness.com/themes/pinbin/
+
+You can drop your queries in our contact form in the following link.
+http://colorawesomeness.com/themes/contact-us/
+
+== Additional Notes ==
+The theme is released for free under the terms of the GNU General Public License version 2
+and some parts under their respective licenses.
+In general words, feel free and encouraged to use, modify and redistribute this theme however you like.
+You may remove any copyright references (unless required by third party components) and crediting is not necessary.
+The theme is offered free of charge. If someone asked money for it, someone just tricked you.
+
+== Supported Browser ==
+Mozilla Firefox, Google Chrome, Safari, IE 10,9,8,7
+
+== Version history ==
+1.4.7 - Improved alignment for images
+		Improved Firefox support
+		Some other minor CSS tweaks
+
+1.4.6 - Fixed issues with functions.js file.
+
+1.4.5 -	Fixed post overlapping issues for mobile devices.
+
+1.4.4 -	Updated copyright/license information 
+
+1.4.3 -	Updated copyright/license information 
+
+1.4.2 -	Added license information for the default image
+		Navigation now wrapped within div.
+		Improved page navigation. Now wrapped with "nav".
+		Updated screenshot 
+
+1.4.1 -	Added default image
+		Updated screenshot
+
+1.4 - 	Major CSS overhaul to reduce its size.
+		Improved responsiveness on mobile devices (search page and post page).
+		Improved lists styles
+		Updated comments section
+
+1.3 - 	Minor CSS improvements
+		Updated functions.php file with "wp_title()".
+		Front-end scripts are now securely added using "if ( ! is_admin() )"
+		Theme settings page now uses "submit_button()"
+		Theme settings scripts are now limited to one page
+
+1.2 - 	Completely rewritten functions.php. Theme now uses default WP scripts.
+		Improved cross-browser compatibility
+		Several other bug fixes and improvements.
+		Improved support for mobile devices with smaller screens
+		Translation ready
+
+1.1 - 	Several bug fixes and design improvements. 
+		Improved mobile menu and overall support for mobile devices. 
+		New search page now displaying search term and featured images.
+		Updated header and header navigation.
+		Logo uploader now uses WordPress built-in media manager.
+
+1.0 – Hello world!
+
+<?php
+
+/* The template for displaying Search Results pages. */
+
+get_header(); ?>
+
+		<section id="primary" class="site-content">
+			<div id="content" role="main">
+
+			<?php if ( have_posts() ) : ?>
+
+				<header class="page-header">
+					<h1 class="page-title"><?php printf( __( 'Search Results for: %s', 'pinbin' ), '<span>' . get_search_query() . '</span>' ); ?></h1>
+				</header>
+		<?php while (have_posts()) : the_post(); ?>	
+		<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+			<?php if ( has_post_thumbnail() ) { ?>			
+				<div class="pinbin-image"><?php the_post_thumbnail( 'detail-image' );  ?></div>
+				<?php } ?> 
+       			<div class="pinbin-copy"><h2><a class="front-link" href="<?php the_permalink() ?>"><?php the_title(); ?></a></h2>
+                <p class="pinbin-date"><?php the_time(get_option('date_format')); ?>  </p>
+
+                  <?php the_excerpt(); ?> 
+
+         </div>
+       </div>
+				<?php endwhile; ?>
+
+			<?php else : ?>
+
+				<article id="post-0" class="post no-results not-found">
+					<header class="entry-header">
+						<h1 class="entry-title"><?php _e( 'Nothing Found', 'pinbin' ); ?></h1>
+					</header><!-- .entry-header -->
+
+					<div class="entry-content">
+						<p><?php _e( 'Sorry, but nothing matched your search terms. Please try again with some different keywords.', 'pinbin' ); ?></p>
+						<?php get_search_form(); ?>
+					</div><!-- .entry-content -->
+				</article><!-- #post-0 -->
+
+			<?php endif; ?>
+
+			</div><!-- #content -->
+		</section><!-- #primary .site-content -->
+
+<?php get_footer(); ?>
+<?php
+/**
+ * Single post template
+ */
+
+?>
+<?php get_header(); ?>
+
+	<?php if (have_posts()) : while (have_posts()) : the_post(); ?>     
+       
+   		<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+<?php if ( has_post_thumbnail() ) { ?>
+  <div class="pinbin-image"><?php the_post_thumbnail( 'detail-image' );  ?></div>
+  <div class="pinbin-category"><p><?php the_category(', ') ?></p></div>
+      <div class="post-nav">
+          <div class="post-prev"><?php previous_post_link('%link', '&larr;'); ?></div>
+          <div class="post-next"><?php next_post_link('%link', '&rarr;'); ?></div>
+      </div>  
+            <div class="pinbin-copy">
+<?php } else { ?>           
+      <div class="post-nav">
+          <div class="post-prev"><?php previous_post_link('%link', '&larr;'); ?></div>
+          <div class="post-next"><?php next_post_link('%link', '&rarr;'); ?></div>
+      </div>  
+            <div class="pinbin-copy">
+              <div class="pinbin-category"><p><?php the_category(', ') ?></p></div>
+<?php } ?>
+                <h1><?php the_title(); ?></h1>
+                 <p class="pinbin-meta"><?php _e( 'By', 'pinbin' ); ?> <?php the_author(); ?>, <?php the_time(get_option('date_format')); ?></p>
+           		 <?php the_content('Read more'); ?> 
+	<div class="pagelink"><?php wp_link_pages(); ?></div>                
+	 <div class="posttags"><?php the_tags(); ?></div>
+                <div class="clear"></div>
+				<?php comments_template(); ?> 
+
+                </div>
+          
+       </div>
+       
+		<?php endwhile; endif; ?>
+
+<?php get_footer(); ?>
+
+
+
+/*
+	Theme Name: Pinbin
+	Theme URI: http://colorawesomeness.com/themes/pinbin
+	Description: Pinbin WordPress theme is a fully responsive theme that looks great on any devices including iPad, iPhone or any other mobile device. This theme is inspired by Pinterest grid system that puts images first.  Pinbin is a perfect fit for photographers, web designers and anyone who likes to show off their photos, mockups, infographics and any other images.  Some other great features are sticky (fixed) navigation, translation ready, responsive layout, simplicity and minimalism.
+	Author: Color Awesomeness
+	Author URI: http://colorawesomeness.com/themes
+	Version: 1.4.7
+	License: GNU General Public License v2 or later
+	License URI: http://www.gnu.org/licenses/gpl-2.0.html
+	Tags: light, white, brown, gray, black, photoblogging, one-column, flexible-width, custom-background, custom-menu, featured-images, full-width-template, microformats, theme-options
+*/
+
+/* colour styles : reset
+-------------------------------------------------------------- */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  border: 0;
+  font-size: 100%;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+body  { 
+  font-size:12px; 
+  line-height:20px;  
+  font-family: Helvetica, sans-serif;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+#wrap { 
+  margin-left:3%;
+}
+
+/* Typohraphy
+--------------------------------------------------------------*/
+/* Fonts
+--------------------------------------------------------------*/
+h1,h2,h3,h4,h5 {
+  color: #111;
+}
+h1 {
+  font-size: 36px;
+  line-height: 46px;
+  padding-bottom: 5px;
+  padding-top: 5px;
+}
+h2 {
+  font-size: 24px;
+  line-height: 32px;
+}
+h2 a.front-link {
+  text-decoration: none;
+}
+h3 {
+  font-size: 18px;
+  line-height: 28px;
+}
+h4 {
+  font-size: 16px;
+  line-height: 28px;
+}
+h5 {
+  font-size: 14px;
+  line-height: 26px;
+  font-weight: normal;
+}
+h6 {
+  font-size: 13px;
+  line-height: 24px;
+  color: #858585;
+}
+p {
+  font-size: 13px;
+  color: #454545;
+  line-height: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+/* Lists -bullet points
+--------------------------------------------------------------*/
+ul li {
+  font-size: 12px;
+  color: #858585;
+  padding-left: 10px;
+}
+ol {
+  margin-left: 25px;
+}
+ol li {
+  font-size: 12px;
+  color: #858585;
+  padding-left: 10px;
+  margin-bottom: 7px;
+}
+ul,ol {
+  margin: 0 0 1.5em 3em;
+}
+ul {
+  list-style: disc;
+  margin-left: 20px;
+}
+ol {
+  list-style: decimal;
+}
+ol li ol {
+  list-style-type: lower-alpha;
+}
+ol li ol li ol {
+  list-style-type: lower-roman;
+}
+ul ul,ol ol,ul ol,ol ul {
+  margin-bottom: 0;
+  margin-left: 1.5em;
+}
+hr {
+  background: url(./images/hr.jpg) top center no-repeat;
+  border: 0;
+  outline: 0;
+  clear: both;
+  height: 10px;
+}
+b,strong {
+  font-weight: bold;
+}
+/* Text link style
+--------------------------------------------------------------*/
+a:link {
+  color: #444444;
+  text-decoration: underline;
+}
+a:visited {
+  color: #111;
+  text-decoration: underline;
+}
+a:hover {
+  color: #111;
+  text-decoration: none;
+}
+a:active {
+  color: #444444;
+  text-decoration: none;
+}
+a:focus {
+  outline-style: none;
+}
+/* Main Navigation
+--------------------------------------------------------------*/
+#main-nav-wrapper {
+  background: #fff;
+  float: left;
+  position: relative;
+  width: 100%;
+  min-height: 42px;
+  max-height: 86px;
+  z-index: 2;
+}
+.main-nav {
+  display: block;
+  float: left;
+  position: fixed;
+  width: 100%;
+  z-index: 3;
+}
+.main-nav ul {
+  padding: 5px 25px;
+  position: relative;
+  width: 960px;
+  margin-top: -1px;
+}
+.main-nav ul li {
+  display: inline;
+  float: left;
+  padding: 12px 12px;
+  position: relative;
+}
+.main-nav ul li a {
+  color: #999;
+  font-size: 13px;
+  text-decoration: none;
+}
+.main-nav ul li:hover a,.main-nav li.current-menu-item a,.main-nav li.current-post-parent a {
+  color: #111;
+}
+.main-nav ul li ul {
+  display: none;
+  z-index: 9999;
+}
+.main-nav ul ul li a:hover {
+  color: #111 !important;
+}
+.main-nav ul li:hover ul {
+  background: #fff;
+  -webkit-box-shadow: 0 3px 7px -2px #333;
+  box-shadow: 0 3px 7px -2px #333;
+  display: block;
+  margin-top: 5px;
+  padding: 5px;
+  position: absolute;
+  left: 0px;
+  top: 33px;
+  width: 150px;
+}
+.main-nav ul li:hover ul li {
+  padding: 4px;
+  position: relative;
+  width: 97%;
+}
+.main-nav ul ul li a {
+  color: #999 !important;
+  height: auto;
+  display: block;
+}
+.main-nav ul .sub-menu li,.main-nav ul .children li {
+  background: none;
+  border-bottom: 1px dotted #e8e8e8;
+  width: 100%;
+}
+.main-nav ul li:hover ul li ul {
+  display: none;
+}
+.main-nav ul li:hover ul li:hover ul {
+  border: none;
+  display: block;
+  margin: 0;
+  position: absolute;
+  left: 155px;
+  top: 0;
+  width: 150px;
+}
+#header {
+  padding-bottom: 95px;
+}
+/* Logo
+--------------------------------------------------------------*/
+#logo img {
+  max-height: 50px;
+  padding: 0 0 0 3%;
+  position: relative;
+  float: left;
+}
+#logo img:hover,.pinbin-image img:hover {
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+  filter: alpha(opacity=80);
+  opacity: 0.8;
+}
+#logo img,.pinbin-image img {
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+  filter: alpha(opacity=100);
+  opacity: 1;
+  -webkit-transition: opacity 0.3s linear;
+  -moz-transition: opacity 0.3s linear;
+  -o-transition: opacity 0.3s linear;
+  -ms-transition: opacity 0.3s linear;
+  transition: opacity 0.3s linear;
+}
+/* Footer
+--------------------------------------------------------------*/
+#footer-area {
+  width: 100%;
+  display: inline;
+  float: left;
+  padding-top: 10px;
+  margin-top: 20px;
+  clear: both;
+  border-top: 2px solid #fff;
+}
+#footer-area .widget {
+  width: 310px;
+  margin-right: 10px;
+  padding-top: 15px;
+  display: inline;
+  float: left;
+  font-size: 12px;
+  color: #454545;
+  line-height: 18px;
+}
+#footer-area .widget h3 {
+  color: #858585;
+  background: #fff;
+  padding-left: 10px;
+  margin-bottom: 10px;
+}
+#footer-area .widget p {
+  color: #111;
+}
+#footer-area .widget ul {
+  margin-left: 0px;
+}
+#footer-area .widget li {
+  color: #858585;
+}
+#footer-area .widget a {
+  color: #444444;
+}
+#footer-area .widget a:hover {
+  color: #111;
+}
+#footer-area .widget-copy {
+  width: 280px;
+  overflow: hidden;
+  display: inline;
+  float: left;
+  margin-left: 10px;
+}
+#footer-area .widget-copy a {
+  text-decoration: none;
+}
+.widget img {
+  max-width: 100%;
+  height: auto;
+}
+#footer-area .wp-caption {
+  border: 1px solid #999;
+}
+#searchsubmit,button,.comment-submit,input[type="submit"] {
+  clear: both;
+  width: auto;
+  height: auto;
+  line-height: 18px;
+  background: url(./images/button-back.gif) bottom left repeat-x !important;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-shadow: 0 1px 0 rgba( 255, 255, 255, 0.45 ) !important;
+  min-width: 0;
+}
+#searchsubmit:hover,.comment-submit:hover {
+  background: #fff url(./images/button-back-over.gif) bottom left repeat-x;
+  border: 1px solid #959595;
+}
+/* Footer copyright
+--------------------------------------------------------------*/
+#copyright {
+  clear: both;
+  width: 100%;
+  border-top: 2px solid #fff;
+  display: inline;
+  float: left;
+  margin-top: 20px;
+  padding-top: 10px;
+  margin-bottom: 20px;
+}
+#copyright p {
+  padding-top: 15px;
+  color: #4f5356;
+  font-size: 12px;
+}
+#copyright a {
+  color: #858585;
+  text-decoration: none;
+}
+#copyright a:hover {
+  color: #111;
+  text-decoration: underline;
+}
+/* Post and page style
+--------------------------------------------------------------*/
+.type-post,#main-nav-wrapper,nav {
+  -webkit-box-shadow: 0 4px 15px -5px #555;
+  box-shadow: 0 4px 15px -5px #555;
+}
+.type-post,.type-page,.type-attachment,#post-area .post {
+  border-right: 1px solid #dbdbdb;
+  border-bottom: 1px solid #dbdbdb;
+}
+.type-post,.type-page,.type-attachment {
+  width: 750px;
+  background: #fff;
+  margin-right: 10px;
+  margin-top: 15px;
+  float: left;
+}
+.type-post {
+  position: relative;
+}
+.pinbin-image img {
+  z-index: 5;
+}
+.pinbin-category {
+  position: absolute;
+  width: auto;
+  background: #000;
+  zoom: 1;
+  filter: alpha(opacity=70);
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
+  filter: alpha(opacity=70);
+  opacity: 0.7;
+  margin-top: -36px;
+  z-index: 1;
+  height: 30px;
+  overflow: hidden;
+  left: 0;
+}
+.pinbin-category p {
+  margin: 0;
+  padding: 0;
+  line-height: 30px;
+  padding-left: 20px;
+  padding-right: 40px;
+  color: #fff;
+  font-style: italic;
+}
+.pinbin-category a {
+  color: #fff;
+  font-style: italic;
+  text-decoration: none;
+}
+.pinbin-category a:hover {
+  color: #777;
+  text-decoration: none;
+}
+.pinbin-copy {
+  padding: 20px 8%;
+}
+.pinbin-meta {
+  width: 100%;
+  display: inline-block;
+  color: #8e8e8e;
+  font-size: 11px;
+  margin-bottom: 10px;
+  padding-bottom: 0px;
+  border-bottom: 1px dotted #cccccc;
+}
+.size-full {
+  max-width: 100%;
+  height: inherit;
+}
+#post-area .sticky {
+  background: #ececec !important;
+}
+#post-area .sticky:hover {
+  background: #fff !important;
+}
+/* Post style on frontpage
+--------------------------------------------------------------*/
+#post-area .post {
+  width: 300px;
+  background: #FFF;
+  margin-right: 10px;
+  margin-top: 15px;
+}
+#post-area .post .pinbin-copy {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  overflow: hidden;
+  clear: both;
+  width: 250px;
+}
+#post-area .post .pinbin-date {
+  width: 115px;
+  color: #8e8e8e;
+  font-size: 11px;
+  border-bottom: 1px dotted #cccccc;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+#post-area .post .pinbin-link a {
+  text-decoration: none;
+  background: #444;
+  padding: 5px 10px;
+  color: #fafafa;
+  font-size: 12px;
+  float: right;
+  cursor: pointer;
+  position: absolute;
+  margin-left: 245px;
+  margin-top: -15px;
+}
+#post-area .post .pinbin-link a:hover {
+  background: #777;
+}
+#post-area .post .pinbin-link a,.post-next a,.post-prev a,.post-next a,.post-prev a {
+  -webkit-transition: background 0.3s linear;
+  -moz-transition: background 0.3s linear;
+  -o-transition: background 0.3s linear;
+  -ms-transition: background 0.3s linear;
+  transition: background 0.3s linear;
+}
+/* Single post navigation
+--------------------------------------------------------------*/
+.post-nav {
+  display: inline;
+  float: left;
+  margin-left: 10px;
+  margin-top: 15px;
+}
+.post-next a,.post-prev a {
+  text-decoration: none;
+  background: #444;
+  padding: 8px 9px;
+  color: #fafafa;
+  font-size: 18px;
+  text-transform: uppercase;
+  float: right;
+  cursor: pointer;
+  position: absolute;
+}
+.post-next a {
+  margin-left: 705px;
+  margin-top: 15px;
+}
+.post-prev a {
+  position: absolute;
+  margin-left: -10px;
+  margin-top: 15px;
+}
+.post-next a:hover,.post-prev a:hover {
+  background: #777;
+}
+.posttags {
+  font-color: #8e8e8e;
+  font-size: 11px;
+  float: right;
+}
+.view-next {
+  float: right;
+}
+.view-previous {
+  float: left;
+}
+.view-previous,.view-next {
+  margin-top: 20px;
+}
+/* Comments
+--------------------------------------------------------------*/
+.comments-area ol {
+  padding: 0;
+}
+.comments-area li {
+  width: 100%;
+  clear: both;
+  float: left;
+  margin-bottom: 10px;
+}
+.comments-area {
+  margin-left: -10px;
+}
+.comment {
+  border-bottom: 1px solid #8e8e8e;
+  width: 630px;
+  margin-left: -15px;
+}
+.avatar {
+  display: none;
+}
+.reply {
+  display: none;
+}
+.comment-meta a {
+  text-decoration: none;
+}
+.comment-author {
+  font-size: 14px;
+  font-weight: bold;
+  font-family: sans-serif;
+}
+#comment {
+  width: 97%;
+  height: 180px;
+}
+.comment-form-author,.comment-form-email,.comment-form-url {
+  padding: 0;
+}
+label {
+  display: inline-block;
+}
+.text-input,#s,input[type=text],input[type=password],textarea {
+  clear: both;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+  padding: 7px;
+  color: #555;
+  font-size: 12px;
+}
+#s {
+  width: auto;
+  margin-top: 3px;
+}
+.comment-input {
+  clear: both;
+  border: 1px solid #ccc;
+  margin-bottom: 5px;
+  width: 96%;
+  padding: 7px;
+  color: #555;
+  font-size: 12px;
+}
+.bypostauthor {
+}
+/* Other
+--------------------------------------------------------------*/
+.clear {
+  clear: both;
+}
+.aligncenter {
+  display: block;
+  margin: 0 auto;
+}
+.alignleft {
+  float: left;
+  margin: 10px 10px 20px 0;
+}
+.alignright {
+  float: right;
+  margin: 10px 0 20px 0;
+}
+.wp-caption {
+  text-align: left;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.wp-caption-text {
+  margin-top: 2px;
+  text-align: left;
+  font-style: italic;
+  font-size: 11px;
+  color: #999;
+}
+.wp-caption {
+  border: 1px solid #ccc;
+  max-width: 99%;
+}
+.wp-caption.aligncenter,.wp-caption.alignleft,.wp-caption.alignright {
+  margin-bottom: 1.5em;
+}
+.wp-caption img {
+  display: block;
+  margin: 1.2% auto 0;
+  max-width: 98%;
+}
+.wp-caption-text {
+  text-align: center;
+  font-size: 80%;
+}
+.wp-caption .wp-caption-text,.gallery-caption {
+  margin: 0;
+}
+.pagelink {
+  margin-top: 20px;
+  display: block;
+  position: relative;
+  clear: both;
+}
+blockquote {
+  font-size: 2em;
+  line-height: 23px;
+  color: #111;
+  margin-left: 20px;
+  border-left: 1px dotted #999;
+  padding-left: 25px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+/* Table
+--------------------------------------------------------------*/
+table {
+  margin: 0 0 1.5em;
+  width: 100%;
+}
+td,th {
+  padding: 5px;
+  border: 1px solid #eaeaea;
+}
+td:hover {
+  background: #eaeaea;
+}
+tr.alternate {
+  background-color: #efefef;
+}
+th {
+  font-weight: bold;
+  background: #999;
+  color: #fff;
+  text-align: center;
+}
+pre {
+  background: #efefef;
+  font-size: 13px;
+  line-height: 1.2;
+  margin-bottom: 1.6em;
+  padding: 1.6em;
+  overflow: auto;
+  max-width: 100%;
+}
+dt {
+  font-weight: bold;
+}
+dd {
+  margin: 0 1.5em 1.5em;
+}
+.attachment-full {
+  width: 100%;
+  height: 100%;
+}
+select {
+  width: 100%;
+}
+.main-nav select {
+  display: none;
+}
+/* mobile styles
+-----------------------------------------------*/
+/* For devices with screen size lower than 480px */
+@media only screen and (max-width: 480px) {
+  #wrap {
+  width: 320px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+h1 {
+  font-size: 24px;
+  line-height: 31px;
+}
+iframe {
+  width: 100%;
+  height: auto;
+}
+.post-prev a {
+  background: #444;
+  padding: 10px 13px;
+  font-size: 12px;
+  margin-left: -10px;
+  margin-top: -20px;
+}
+.post-next a {
+  margin-left: 252px;
+  margin-top: -20px;
+}
+.post-next a:hover,.post-prev a:hover {
+  background: #777;
+}
+.posttags {
+  float: left;
+}
+.type-post .post-next a {
+  margin-left: 264px;
+}
+.single-post .type-post {
+  width: 310px;
+  margin: 0 auto;
+}
+.type-page img {
+  width: 100%;
+  height: inherit;
+}
+.type-post .pinbin-copy {
+  width: 280px;
+  padding: 15px;
+}
+.type-page {
+  width: 290px;
+  padding: 10px 3% 20px;
+}
+.type-post {
+  width: 310px;
+}
+#comment {
+  width: 97%;
+}
+#comment-form {
+  width: 285px;
+}
+h2 {
+  font-size: 18px;
+  line-height: 25px;
+}
+.size-full {
+  width: 290px !important;
+}
+.comments-area li {
+  width: 290px;
+  clear: both;
+  padding: 0px;
+}
+.post-nav {
+  margin-top: 14px;
+}
+.pinbin-image img {
+  width: 100%;
+  height: auto;
+}
+#post-area {
+  max-width: 310px;
+  margin: 0 auto;
+}
+.type-post h1:first-child {
+  padding-top: 25px;
+}
+#post-area .post .pinbin-link a {
+  margin-left: 263px;
+}
+#post-area .post .pinbin-copy {
+  width: 280px;
+}
+.page .pinbin-copy {
+  padding: 0;
+}
+#post-area .post {
+  width: 310px;
+  display: block;
+}
+}
+/* For devices with screen size lower than 767px */
+@media only screen and (max-width: 767px) {
+  /* Navigation */
+.main-nav ul {
+  display: none;
+}
+.main-nav select {
+  display: inline;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background: url('images/mobile-menu-icon.png') no-repeat scroll right center #FFF;
+  appearance: none;
+  padding: 8px 10px;
+  margin: 8px 15px;
+  border: 1px solid #eaeaea;
+  border-radius: 5px;
+  width: 40%;
+}
+#main-nav-wrapper {
+  height: 42px;
+  display: inline;
+  float: none;
+}
+.main-nav {
+  background: #fff;
+}
+}
+<?php
+/**
+ * Error page displayed when no results are found
+ */
+
+?>
+
+<?php get_header(); ?>
+
+   		<div class="type-page">
+                                
+       			<div class="pinbin-copy">
+                
+					<h1><?php _e( '404: Page or File Not Found', 'pinbin') ?></h1>
+			
+						<p><?php _e( 'Oops! It seems you stumbled on something that does not exist or was moved', 'pinbin') ?></p>
+					
+					<h2><?php _e( 'Need help?', 'pinbin') ?></h2>
+
+					<p><?php _e( 'You might try the following:', 'pinbin') ?></p>
+					<ul> 
+						<li><?php _e( 'Check spelling', 'pinbin') ?></li>
+						<li><a href="<?php echo esc_url( home_url( '/' ) ); ?>/"><?php _e( 'Return to  home page', 'pinbin') ?></a></li> 
+						<li><?php _e( 'Click ', 'pinbin') ?> <a href="javascript:history.back()"><?php _e( 'Return button', 'pinbin') ?></a></li>
+					</ul>
+		      
+         		</div>
+                              
+       </div>
+              
+<?php get_footer(); ?>
+
+<?php
+/**
+ * The template for attachements.
+ */
+
+?>
+
+<?php get_header(); ?>
+
+	<?php if (have_posts()) : while (have_posts()) : the_post(); ?>     
+       
+   		<div id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+			<?php if ( has_post_thumbnail() ) { ?>			
+				<div class="pinbin-image"><?php the_post_thumbnail( 'detail-image' );  ?></div>
+                <div class="pinbin-category"><p><?php the_category(', ') ?></p></div>
+             <?php } ?>                   
+      <div class="post-nav">
+          <div class="post-prev"><?php previous_image_link('%link', '&larr;'); ?></div>
+          <div class="post-next"><?php next_image_link('%link', '&rarr;'); ?></div>
+      </div>  
+       			<div class="pinbin-copy">
+                <h1><?php the_title(); ?></h1>
+                 <p class="pinbin-date"> <?php the_time(get_option('date_format')); ?></p>
+                 <?php echo wp_get_attachment_image( $post->ID, 'full' ); ?>
+           		 <?php the_content(); ?> 
+	<div class="pagelink"><?php wp_link_pages(); ?></div>                
+	 <div class="posttags"><?php the_tags(); ?></div>
+                <div class="clear"></div>
+				<?php comments_template(); ?> 
+
+                </div>
+          
+       </div>
+       
+		<?php endwhile; endif; ?>
+
+<?php get_footer(); ?>
